@@ -43,10 +43,18 @@ func main() {
 			return err
 		}
 
+		genericNodeGroup, err := nodegroup.NewGenericGroupNode(ctx, "genericGroupNode", &nodegroup.GenericGroupNodeArgs{
+			ClusterName: principalCluster.Cluster.Name,
+			Subnets:     privateSubnets,
+		}, pulumi.DependsOn([]pulumi.Resource{principalCluster}))
+		if err != nil {
+			return err
+		}
+
 		_, err = addon.NewVpcCni(ctx, "vpc-cni", &addon.VpcCniArgs{
 			ClusterName:            principalCluster.Cluster.Name,
 			IssuerUrlWithoutPrefix: principalCluster.IssuerUrlWithoutPrefix,
-		}, pulumi.Parent(principalCluster))
+		}, pulumi.DependsOn([]pulumi.Resource{genericNodeGroup}))
 
 		if err != nil {
 			return err
@@ -55,7 +63,7 @@ func main() {
 		_, err = addon.NewEbsController(ctx, "ebs-controller", &addon.EbsControllerArgs{
 			ClusterName:            principalCluster.Cluster.Name,
 			IssuerUrlWithoutPrefix: principalCluster.IssuerUrlWithoutPrefix,
-		}, pulumi.Parent(principalCluster))
+		}, pulumi.DependsOn([]pulumi.Resource{genericNodeGroup}))
 
 		if err != nil {
 			return err
@@ -64,7 +72,7 @@ func main() {
 		_, err = addon.NewElbController(ctx, "elb-controller", &addon.ElbControllerArgs{
 			IssuerUrlWithoutPrefix: principalCluster.IssuerUrlWithoutPrefix,
 			ClusterName:            principalCluster.Cluster.Name,
-		}, pulumi.Parent(principalCluster))
+		}, pulumi.DependsOn([]pulumi.Resource{genericNodeGroup}))
 
 		if err != nil {
 			return err
@@ -83,14 +91,6 @@ func main() {
 				func(sgId *string) string {
 					return *sgId
 				}).(pulumi.StringOutput)},
-		}, pulumi.DependsOn([]pulumi.Resource{principalCluster}))
-		if err != nil {
-			return err
-		}
-
-		_, err = nodegroup.NewGenericGroupNode(ctx, "genericGroupNode", &nodegroup.GenericGroupNodeArgs{
-			ClusterName: principalCluster.Cluster.Name,
-			Subnets:     privateSubnets,
 		}, pulumi.DependsOn([]pulumi.Resource{principalCluster}))
 		if err != nil {
 			return err

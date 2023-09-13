@@ -23,7 +23,7 @@ func NewEbsController(ctx *pulumi.Context, name string, args *EbsControllerArgs,
 		args = &EbsControllerArgs{}
 	}
 
-	cfg := config.New(ctx, "aws")
+	cfg := config.New(ctx, "")
 	account := cfg.GetSecret("account")
 
 	// <package>:<module>:<type>

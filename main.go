@@ -4,6 +4,7 @@ import (
 
 	// "k8s-cluster/role"
 	"k8s-cluster-own/cluster"
+	"k8s-cluster-own/nodegroup"
 	endpoints "k8s-cluster-own/service-endpoints"
 
 	// endpoints "k8s-cluster-own/service-endpoints"
@@ -73,6 +74,14 @@ func main() {
 				func(sgId *string) string {
 					return *sgId
 				}).(pulumi.StringOutput)},
+		})
+		if err != nil {
+			return err
+		}
+
+		_, err = nodegroup.NewGenericGroupNode(ctx, "genericGroupNode", &nodegroup.GenericGroupNodeArgs{
+			ClusterName: principalCluster.Cluster.Name,
+			Subnets:     privateSubnets,
 		})
 		if err != nil {
 			return err

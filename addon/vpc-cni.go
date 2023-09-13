@@ -25,7 +25,7 @@ func NewVpcCni(ctx *pulumi.Context, name string, args *VpcCniArgs, opts ...pulum
 		args = &VpcCniArgs{}
 	}
 
-	cfg := config.New(ctx, "aws")
+	cfg := config.New(ctx, "")
 	account := cfg.GetSecret("account")
 
 	// <package>:<module>:<type>

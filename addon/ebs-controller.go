@@ -54,7 +54,7 @@ func NewEbsController(ctx *pulumi.Context, name string, args *EbsControllerArgs,
 	ebsControllerRole, err := iam.NewRole(ctx, "ebs-controller-role", &iam.RoleArgs{
 		AssumeRolePolicy:  trustedPolicy,
 		ManagedPolicyArns: pulumi.ToStringArray([]string{"arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"}),
-	})
+	}, pulumi.Parent(componentResource))
 
 	if err != nil {
 		return nil, err
@@ -64,7 +64,7 @@ func NewEbsController(ctx *pulumi.Context, name string, args *EbsControllerArgs,
 		ClusterName:           args.ClusterName,
 		AddonName:             pulumi.String("aws-ebs-csi-driver"),
 		ServiceAccountRoleArn: ebsControllerRole.Arn,
-	})
+	}, pulumi.Parent(componentResource))
 
 	if err != nil {
 		return nil, err

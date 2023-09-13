@@ -52,14 +52,14 @@ func main() {
 			return err
 		}
 
-		// _, err = addon.NewEbsController(ctx, "ebs-controller", &addon.EbsControllerArgs{
-		// 	ClusterName:            principalCluster.Cluster.Name,
-		// 	IssuerUrlWithoutPrefix: principalCluster.Cluster.Name,
-		// })
-		//
-		// if err != nil {
-		// 	return err
-		// }
+		_, err = addon.NewEbsController(ctx, "ebs-controller", &addon.EbsControllerArgs{
+			ClusterName:            principalCluster.Cluster.Name,
+			IssuerUrlWithoutPrefix: principalCluster.IssuerUrlWithoutPrefix,
+		})
+
+		if err != nil {
+			return err
+		}
 
 		var InterfaceEndpointServices []string = []string{"ecr.api", "ecr.dkr", "sts", "ssm", "ec2messages", "ssmmessages", "ec2"}
 		var GatewayEndpointServices []string = []string{"s3"}

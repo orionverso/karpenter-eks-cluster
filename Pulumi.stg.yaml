@@ -1,0 +1,6 @@
+config:
+  aws:account:
+    secure: AAABAN05qgj5aPbLpZRjyKyK5uuNHGiAbUb4NZEsiOvnvfx/19tP3GTWb0Q=
+  aws:region: us-east-1
+  k8s-cluster-own:org: orionverso
+  k8s-cluster-own:stack: dev

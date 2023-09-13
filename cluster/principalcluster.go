@@ -148,6 +148,7 @@ func NewPrincipalCluster(ctx *pulumi.Context, name string, args *PrincipalCluste
 
 	ctx.Export("kubeconfig", kubeconfig)
 	ctx.Export("IssuerUrl", IssuerUrl)
+	ctx.Export("IssuerUrlWithoutPrefix", IssuerUrlWithoutPrefix)
 	ctx.Export("ClusterSecurityGroupId", k8scluster.VpcConfig.ClusterSecurityGroupId())
 	ctx.Export("ClusterName", k8scluster.Name)
 

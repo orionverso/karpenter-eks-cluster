@@ -13,6 +13,7 @@ import (
 
 	"k8s-cluster-own/addon"
 
+	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/eks"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi/config"
 )
@@ -47,6 +48,28 @@ func main() {
 			ClusterName: principalCluster.Cluster.Name,
 			Subnets:     privateSubnets,
 		}, pulumi.DependsOn([]pulumi.Resource{principalCluster}))
+		if err != nil {
+			return err
+		}
+
+		_, err = nodegroup.NewOpenNodeGroup(ctx, "OpenGroupx86", &nodegroup.OpenNodeGroupArgs{
+			NodeGroupArgs: eks.NodeGroupArgs{
+				ClusterName:  principalCluster.Cluster.Name,
+				CapacityType: pulumi.StringPtr("ON_DEMAND"),
+				DiskSize:     pulumi.IntPtr(5),
+				// NodeRoleArn:  injected,
+				ScalingConfig: eks.NodeGroupScalingConfigArgs{
+					MinSize:     pulumi.Int(2),
+					DesiredSize: pulumi.Int(4),
+					MaxSize:     pulumi.Int(6),
+				},
+				Labels: pulumi.ToStringMap(map[string]string{
+					"arch": "amd64",
+				}),
+				InstanceTypes: pulumi.ToStringArray([]string{"t2.micro"}),
+				SubnetIds:     privateSubnets,
+			},
+		})
 		if err != nil {
 			return err
 		}

@@ -101,6 +101,15 @@ func main() {
 			return err
 		}
 
+		_, err = eks.NewAddon(ctx, "kubecost", &eks.AddonArgs{
+			AddonName:   pulumi.String("kubecost_kubecost"),
+			ClusterName: principalCluster.Cluster.Name,
+		})
+
+		if err != nil {
+			return err
+		}
+
 		var InterfaceEndpointServices []string = []string{"ecr.api", "ecr.dkr", "sts", "ssm", "ec2messages", "ssmmessages", "ec2"}
 		var GatewayEndpointServices []string = []string{"s3"}
 

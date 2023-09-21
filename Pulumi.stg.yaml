@@ -1,4 +1,0 @@
-config:
-  aws:region: us-east-1
-  k8s-cluster-own:org: orionverso
-  k8s-cluster-own:stack: dev

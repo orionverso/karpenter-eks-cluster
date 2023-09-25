@@ -5,7 +5,8 @@ import (
 	// "k8s-cluster/role"
 	"k8s-cluster-own/cluster"
 	"k8s-cluster-own/nodegroup"
-	endpoints "k8s-cluster-own/service-endpoints"
+
+	// endpoints "k8s-cluster-own/service-endpoints"
 
 	// endpoints "k8s-cluster-own/service-endpoints"
 
@@ -33,8 +34,8 @@ func main() {
 		allsubnets := networkRef.GetOutput(pulumi.String("Subnets")).AsStringArrayOutput()
 		privateSubnets := networkRef.GetOutput(pulumi.String("PrivateSubnetIds")).AsStringArrayOutput()
 		// publicSubnets:= networkRef.GetOutput(pulumi.String("PublicSubnetIds")).AsStringArrayOutput()
-		privateRouteTableIds := networkRef.GetOutput(pulumi.String("PrivateRouteTableIds")).AsStringArrayOutput()
-		vpcId := networkRef.GetOutput(pulumi.String("VpcId")).AsStringOutput()
+		// privateRouteTableIds := networkRef.GetOutput(pulumi.String("PrivateRouteTableIds")).AsStringArrayOutput()
+		// vpcId := networkRef.GetOutput(pulumi.String("VpcId")).AsStringOutput()
 
 		principalCluster, err := cluster.NewPrincipalCluster(ctx, "principal-cluster", &cluster.PrincipalClusterArgs{
 			SubnetsIds: allsubnets,
@@ -60,7 +61,7 @@ func main() {
 				DiskSize:     pulumi.IntPtr(5),
 				ScalingConfig: eks.NodeGroupScalingConfigArgs{
 					MinSize:     pulumi.Int(2),
-					DesiredSize: pulumi.Int(4),
+					DesiredSize: pulumi.Int(3),
 					MaxSize:     pulumi.Int(6),
 				},
 				Labels: pulumi.ToStringMap(map[string]string{
@@ -123,32 +124,32 @@ func main() {
 			return err
 		}
 
-		_, err = eks.NewAddon(ctx, "kubecost", &eks.AddonArgs{
-			AddonName:   pulumi.String("kubecost_kubecost"),
-			ClusterName: principalCluster.Cluster.Name,
-		}, pulumi.DependsOn([]pulumi.Resource{amdGroup}))
+		// _, err = eks.NewAddon(ctx, "kubecost", &eks.AddonArgs{
+		// 	AddonName:   pulumi.String("kubecost_kubecost"),
+		// 	ClusterName: principalCluster.Cluster.Name,
+		// }, pulumi.DependsOn([]pulumi.Resource{amdGroup}))
+		//
+		// if err != nil {
+		// 	return err
+		// }
 
-		if err != nil {
-			return err
-		}
-
-		var InterfaceEndpointServices []string = []string{"ecr.api", "ecr.dkr", "sts", "ssm", "ec2messages", "ssmmessages", "ec2"}
-		var GatewayEndpointServices []string = []string{"s3"}
-
-		_, err = endpoints.NewVpcEndpoints(ctx, "useful-vpc-endpoint-services", &endpoints.VpcEndpointsArgs{
-			InterfaceEndpointServices: pulumi.ToStringArray(InterfaceEndpointServices),
-			GatewayEndpointServices:   pulumi.ToStringArray(GatewayEndpointServices),
-			VpcId:                     vpcId,
-			SubnetIds:                 privateSubnets,
-			RouteTableIds:             privateRouteTableIds,
-			SecurityGroupIds: pulumi.StringArray{principalCluster.Cluster.VpcConfig.ClusterSecurityGroupId().ApplyT(
-				func(sgId *string) string {
-					return *sgId
-				}).(pulumi.StringOutput)},
-		}, pulumi.DependsOn([]pulumi.Resource{principalCluster}))
-		if err != nil {
-			return err
-		}
+		// var InterfaceEndpointServices []string = []string{"ecr.api", "ecr.dkr", "sts", "ssm", "ec2messages", "ssmmessages", "ec2"}
+		// var GatewayEndpointServices []string = []string{"s3"}
+		//
+		// _, err = endpoints.NewVpcEndpoints(ctx, "useful-vpc-endpoint-services", &endpoints.VpcEndpointsArgs{
+		// 	InterfaceEndpointServices: pulumi.ToStringArray(InterfaceEndpointServices),
+		// 	GatewayEndpointServices:   pulumi.ToStringArray(GatewayEndpointServices),
+		// 	VpcId:                     vpcId,
+		// 	SubnetIds:                 privateSubnets,
+		// 	RouteTableIds:             privateRouteTableIds,
+		// 	SecurityGroupIds: pulumi.StringArray{principalCluster.Cluster.VpcConfig.ClusterSecurityGroupId().ApplyT(
+		// 		func(sgId *string) string {
+		// 			return *sgId
+		// 		}).(pulumi.StringOutput)},
+		// }, pulumi.DependsOn([]pulumi.Resource{principalCluster}))
+		// if err != nil {
+		// 	return err
+		// }
 
 		return nil
 	})

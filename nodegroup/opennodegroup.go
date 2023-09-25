@@ -1,6 +1,8 @@
 package nodegroup
 
 import (
+	"fmt"
+
 	"github.com/pulumi/pulumi-aws/sdk/v5/go/aws/eks"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/iam"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
@@ -27,7 +29,7 @@ func NewOpenNodeGroup(ctx *pulumi.Context, name string, args *OpenNodeGroupArgs,
 		return nil, err
 	}
 
-	workerRole, err := iam.NewRole(ctx, "generic-groupnode-role", &iam.RoleArgs{
+	workerRole, err := iam.NewRole(ctx, fmt.Sprintf("%s-generic-groupnode-role", name), &iam.RoleArgs{
 		ManagedPolicyArns: pulumi.ToStringArray([]string{
 			"arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore",       // Provides ssh access to worker nodes via AWS SSM
 			"arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly", //Provides read-only access to ECR
@@ -56,7 +58,7 @@ func NewOpenNodeGroup(ctx *pulumi.Context, name string, args *OpenNodeGroupArgs,
 	// })
 	args.NodeGroupArgs.NodeRoleArn = workerRole.Arn
 
-	_, err = eks.NewNodeGroup(ctx, "genericGroupNode", &args.NodeGroupArgs, pulumi.Parent(componentResource))
+	_, err = eks.NewNodeGroup(ctx, fmt.Sprintf("%s-genericGroupNode", name), &args.NodeGroupArgs, pulumi.Parent(componentResource))
 
 	if err != nil {
 		return nil, err

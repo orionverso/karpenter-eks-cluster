@@ -44,29 +44,51 @@ func main() {
 			return err
 		}
 
-		genericNodeGroup, err := nodegroup.NewGenericGroupNode(ctx, "genericGroupNode", &nodegroup.GenericGroupNodeArgs{
-			ClusterName: principalCluster.Cluster.Name,
-			Subnets:     privateSubnets,
-		}, pulumi.DependsOn([]pulumi.Resource{principalCluster}))
-		if err != nil {
-			return err
-		}
+		// genericNodeGroup, err := nodegroup.NewGenericGroupNode(ctx, "genericGroupNode", &nodegroup.GenericGroupNodeArgs{
+		// 	ClusterName: principalCluster.Cluster.Name,
+		// 	Subnets:     privateSubnets,
+		// }, pulumi.DependsOn([]pulumi.Resource{principalCluster}))
+		// if err != nil {
+		// 	return err
+		// }
 
-		_, err = nodegroup.NewOpenNodeGroup(ctx, "OpenGroupx86", &nodegroup.OpenNodeGroupArgs{
+		_, err = nodegroup.NewOpenNodeGroup(ctx, "t4g-small-arm64", &nodegroup.OpenNodeGroupArgs{
 			NodeGroupArgs: eks.NodeGroupArgs{
+				AmiType:      pulumi.StringPtr("AL2_ARM_64"),
 				ClusterName:  principalCluster.Cluster.Name,
 				CapacityType: pulumi.StringPtr("ON_DEMAND"),
 				DiskSize:     pulumi.IntPtr(5),
-				// NodeRoleArn:  injected,
 				ScalingConfig: eks.NodeGroupScalingConfigArgs{
 					MinSize:     pulumi.Int(2),
 					DesiredSize: pulumi.Int(4),
 					MaxSize:     pulumi.Int(6),
 				},
 				Labels: pulumi.ToStringMap(map[string]string{
+					"arch": "arm64",
+				}),
+				InstanceTypes: pulumi.ToStringArray([]string{"t4g.small"}),
+				SubnetIds:     privateSubnets,
+			},
+		})
+		if err != nil {
+			return err
+		}
+
+		amdGroup, err := nodegroup.NewOpenNodeGroup(ctx, "t2-medium-amd64", &nodegroup.OpenNodeGroupArgs{
+			NodeGroupArgs: eks.NodeGroupArgs{
+				ClusterName:  principalCluster.Cluster.Name,
+				CapacityType: pulumi.StringPtr("SPOT"),
+				DiskSize:     pulumi.IntPtr(5),
+				// NodeRoleArn:  injected,
+				ScalingConfig: eks.NodeGroupScalingConfigArgs{
+					MinSize:     pulumi.Int(2),
+					DesiredSize: pulumi.Int(2),
+					MaxSize:     pulumi.Int(6),
+				},
+				Labels: pulumi.ToStringMap(map[string]string{
 					"arch": "amd64",
 				}),
-				InstanceTypes: pulumi.ToStringArray([]string{"t2.micro"}),
+				InstanceTypes: pulumi.ToStringArray([]string{"t2.medium"}),
 				SubnetIds:     privateSubnets,
 			},
 		})
@@ -77,7 +99,7 @@ func main() {
 		_, err = addon.NewVpcCni(ctx, "vpc-cni", &addon.VpcCniArgs{
 			ClusterName:            principalCluster.Cluster.Name,
 			IssuerUrlWithoutPrefix: principalCluster.IssuerUrlWithoutPrefix,
-		}, pulumi.DependsOn([]pulumi.Resource{genericNodeGroup}))
+		}, pulumi.DependsOn([]pulumi.Resource{amdGroup}))
 
 		if err != nil {
 			return err
@@ -86,7 +108,7 @@ func main() {
 		_, err = addon.NewEbsController(ctx, "ebs-controller", &addon.EbsControllerArgs{
 			ClusterName:            principalCluster.Cluster.Name,
 			IssuerUrlWithoutPrefix: principalCluster.IssuerUrlWithoutPrefix,
-		}, pulumi.DependsOn([]pulumi.Resource{genericNodeGroup}))
+		}, pulumi.DependsOn([]pulumi.Resource{amdGroup}))
 
 		if err != nil {
 			return err
@@ -95,7 +117,7 @@ func main() {
 		_, err = addon.NewElbController(ctx, "elb-controller", &addon.ElbControllerArgs{
 			IssuerUrlWithoutPrefix: principalCluster.IssuerUrlWithoutPrefix,
 			ClusterName:            principalCluster.Cluster.Name,
-		}, pulumi.DependsOn([]pulumi.Resource{genericNodeGroup}))
+		}, pulumi.DependsOn([]pulumi.Resource{amdGroup}))
 
 		if err != nil {
 			return err
@@ -104,7 +126,7 @@ func main() {
 		_, err = eks.NewAddon(ctx, "kubecost", &eks.AddonArgs{
 			AddonName:   pulumi.String("kubecost_kubecost"),
 			ClusterName: principalCluster.Cluster.Name,
-		})
+		}, pulumi.DependsOn([]pulumi.Resource{amdGroup}))
 
 		if err != nil {
 			return err

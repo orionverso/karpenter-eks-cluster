@@ -1,6 +1,7 @@
 config:
   aws:region: us-east-1
+  k8s-cluster-own:ClusterName: my-own-cluster-dev-xxx
   k8s-cluster-own:account:
-    secure: AAABAPTY5m6xf0m/2JbOWjnWSK82C3FrmBHs0NTW5BJHPFoHDlNfTc6jW1I=
+    secure: AAABABeNyvkcniYSlKZE7Xp6fwXhqPjcMjtih6emsPquuolwFbQe4iQ5whQ=
   k8s-cluster-own:org: orionverso
   k8s-cluster-own:stack: dev

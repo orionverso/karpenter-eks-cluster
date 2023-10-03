@@ -35,46 +35,64 @@ func main() {
 		privateSubnets := networkRef.GetOutput(pulumi.String("PrivateSubnetIds")).AsStringArrayOutput()
 		// publicSubnets:= networkRef.GetOutput(pulumi.String("PublicSubnetIds")).AsStringArrayOutput()
 		// privateRouteTableIds := networkRef.GetOutput(pulumi.String("PrivateRouteTableIds")).AsStringArrayOutput()
-		// vpcId := networkRef.GetOutput(pulumi.String("VpcId")).AsStringOutput()
+		vpcId := networkRef.GetOutput(pulumi.String("VpcId")).AsStringOutput()
 
 		principalCluster, err := cluster.NewPrincipalCluster(ctx, "principal-cluster", &cluster.PrincipalClusterArgs{
 			SubnetsIds: allsubnets,
+			VpcId:      vpcId,
 		})
 
 		if err != nil {
 			return err
 		}
 
-		// genericNodeGroup, err := nodegroup.NewGenericGroupNode(ctx, "genericGroupNode", &nodegroup.GenericGroupNodeArgs{
-		// 	ClusterName: principalCluster.Cluster.Name,
-		// 	Subnets:     privateSubnets,
-		// }, pulumi.DependsOn([]pulumi.Resource{principalCluster}))
-		// if err != nil {
-		// 	return err
-		// }
-
-		_, err = nodegroup.NewOpenNodeGroup(ctx, "t4g-small-arm64", &nodegroup.OpenNodeGroupArgs{
+		_, err = nodegroup.NewOpenNodeGroup(ctx, "t2-micro-amd64", &nodegroup.OpenNodeGroupArgs{
 			NodeGroupArgs: eks.NodeGroupArgs{
-				AmiType:      pulumi.StringPtr("AL2_ARM_64"),
+				// AmiType:      pulumi.StringPtr("AL2_ARM_64"),
 				ClusterName:  principalCluster.Cluster.Name,
 				CapacityType: pulumi.StringPtr("ON_DEMAND"),
 				DiskSize:     pulumi.IntPtr(5),
 				ScalingConfig: eks.NodeGroupScalingConfigArgs{
 					MinSize:     pulumi.Int(2),
-					DesiredSize: pulumi.Int(3),
+					DesiredSize: pulumi.Int(2),
 					MaxSize:     pulumi.Int(6),
 				},
 				Labels: pulumi.ToStringMap(map[string]string{
 					"arch": "arm64",
 				}),
-				InstanceTypes: pulumi.ToStringArray([]string{"t4g.small"}),
+				InstanceTypes: pulumi.ToStringArray([]string{"t2.micro"}),
 				SubnetIds:     privateSubnets,
+				Tags: pulumi.StringMap(map[string]pulumi.StringInput{
+					"karpenter.sh/discovery": principalCluster.Cluster.Name,
+				}),
 			},
 		})
 		if err != nil {
 			return err
 		}
 
+		// _, err = nodegroup.NewOpenNodeGroup(ctx, "t4g-small-arm64", &nodegroup.OpenNodeGroupArgs{
+		// 	NodeGroupArgs: eks.NodeGroupArgs{
+		// 		AmiType:      pulumi.StringPtr("AL2_ARM_64"),
+		// 		ClusterName:  principalCluster.Cluster.Name,
+		// 		CapacityType: pulumi.StringPtr("ON_DEMAND"),
+		// 		DiskSize:     pulumi.IntPtr(5),
+		// 		ScalingConfig: eks.NodeGroupScalingConfigArgs{
+		// 			MinSize:     pulumi.Int(2),
+		// 			DesiredSize: pulumi.Int(3),
+		// 			MaxSize:     pulumi.Int(6),
+		// 		},
+		// 		Labels: pulumi.ToStringMap(map[string]string{
+		// 			"arch": "arm64",
+		// 		}),
+		// 		InstanceTypes: pulumi.ToStringArray([]string{"t4g.small"}),
+		// 		SubnetIds:     privateSubnets,
+		// 	},
+		// })
+		// if err != nil {
+		// 	return err
+		// }
+		//
 		amdGroup, err := nodegroup.NewOpenNodeGroup(ctx, "t2-medium-amd64", &nodegroup.OpenNodeGroupArgs{
 			NodeGroupArgs: eks.NodeGroupArgs{
 				ClusterName:  principalCluster.Cluster.Name,
@@ -91,6 +109,9 @@ func main() {
 				}),
 				InstanceTypes: pulumi.ToStringArray([]string{"t2.medium"}),
 				SubnetIds:     privateSubnets,
+				Tags: pulumi.StringMap(map[string]pulumi.StringInput{
+					"karpenter.sh/discovery": principalCluster.Cluster.Name,
+				}),
 			},
 		})
 		if err != nil {
@@ -132,6 +153,16 @@ func main() {
 		// if err != nil {
 		// 	return err
 		// }
+
+		_, err = addon.NewKarpenterAutoScaling(ctx, "kapenter-autoscaling", &addon.KarpenterAutoScalingArgs{
+			ClusterName:            principalCluster.Cluster.Name,
+			ClusterId:              principalCluster.Cluster.ID(),
+			IssuerUrlWithoutPrefix: principalCluster.IssuerUrlWithoutPrefix,
+		})
+
+		if err != nil {
+			return err
+		}
 
 		// var InterfaceEndpointServices []string = []string{"ecr.api", "ecr.dkr", "sts", "ssm", "ec2messages", "ssmmessages", "ec2"}
 		// var GatewayEndpointServices []string = []string{"s3"}

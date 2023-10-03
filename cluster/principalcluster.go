@@ -21,6 +21,7 @@ type PrincipalCluster struct {
 
 type PrincipalClusterArgs struct {
 	SubnetsIds pulumi.StringArrayInput
+	VpcId      pulumi.StringInput
 }
 
 func NewPrincipalCluster(ctx *pulumi.Context, name string, args *PrincipalClusterArgs, opts ...pulumi.ResourceOption) (*PrincipalCluster, error) {
@@ -57,7 +58,7 @@ func NewPrincipalCluster(ctx *pulumi.Context, name string, args *PrincipalCluste
 	}
 
 	k8scluster, err := eks.NewCluster(ctx, "my-own-cluster", &eks.ClusterArgs{
-		// DefaultAddonsToRemoves:  pulumi.ToStringArray([]string{"vpc-cni"}),
+		Name:                    pulumi.StringPtr(fmt.Sprintf("principal-cluster-%s", name)),
 		Version:                 pulumi.StringPtr("1.27"),
 		KubernetesNetworkConfig: eks.ClusterKubernetesNetworkConfigArgs{},
 		VpcConfig: eks.ClusterVpcConfigArgs{
@@ -65,6 +66,9 @@ func NewPrincipalCluster(ctx *pulumi.Context, name string, args *PrincipalCluste
 			SubnetIds: args.SubnetsIds, //implicit vpc
 		},
 		RoleArn: clusterrole.Arn,
+		Tags: pulumi.ToStringMap(map[string]string{
+			"karpenter.sh/discovery": fmt.Sprintf("principal-cluster-%s", name),
+		}),
 	}, pulumi.Parent(componentResource))
 
 	if err != nil {
@@ -84,10 +88,30 @@ func NewPrincipalCluster(ctx *pulumi.Context, name string, args *PrincipalCluste
 			if err != nil {
 				return err
 			}
+			_, err = ec2.NewTag(ctx, fmt.Sprintf("tag-subnets-karpenter-discovery-%v", aux), &ec2.TagArgs{
+				Key:        pulumi.String("karpenter.sh/discovery"),
+				ResourceId: pulumi.String(subnetId),
+				Value:      k8scluster.Name,
+			}, pulumi.Parent(k8scluster))
+
+			if err != nil {
+				return err
+			}
+
 			aux = aux + 1
 		}
 		return nil
 	})
+
+	_, err = ec2.NewTag(ctx, "TagClusterSecurityGroup", &ec2.TagArgs{
+		ResourceId: k8scluster.VpcConfig.ClusterSecurityGroupId().Elem().ToStringOutput(),
+		Key:        pulumi.String("karpenter.sh/discovery"),
+		Value:      k8scluster.Name,
+	}, pulumi.Parent(k8scluster), pulumi.DependsOn([]pulumi.Resource{k8scluster}))
+
+	if err != nil {
+		return nil, err
+	}
 
 	IssuerUrl := k8scluster.Identities.Index(pulumi.Int(0)).Oidcs().Index(pulumi.Int(0)).Issuer()
 

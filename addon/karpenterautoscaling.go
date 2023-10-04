@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/cloudwatch"
+	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/eks"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/iam"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/sqs"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
@@ -18,6 +19,7 @@ type KarpenterAutoScalingArgs struct {
 	ClusterName            pulumi.StringInput
 	ClusterId              pulumi.StringInput
 	IssuerUrlWithoutPrefix pulumi.StringInput
+	Subnets                pulumi.StringArrayInput
 }
 
 func NewKarpenterAutoScaling(ctx *pulumi.Context, name string, args *KarpenterAutoScalingArgs, opts ...pulumi.ResourceOption) (*KarpenterAutoScaling, error) {
@@ -194,6 +196,25 @@ func NewKarpenterAutoScaling(ctx *pulumi.Context, name string, args *KarpenterAu
 		Role: karpenterNodeRole.Name,
 		Path: pulumi.StringPtr("/"),
 	}, pulumi.Parent(componentResource))
+
+	if err != nil {
+		return nil, err
+	}
+
+	// The purpose of this group of nodes is not to launch machines, it is to update aws_auth configMap (iamIdentityMappings for eksctl) with the karpenter node role automatically without intricate scripts. So, after that managed karpenter machines can join to the cluster.
+	_, err = eks.NewNodeGroup(ctx, "FalseNodeGroup", &eks.NodeGroupArgs{
+		NodeRoleArn:  karpenterNodeRole.Arn,
+		ClusterName:  args.ClusterName,
+		CapacityType: pulumi.StringPtr("ON_DEMAND"),
+		DiskSize:     pulumi.IntPtr(5),
+		ScalingConfig: eks.NodeGroupScalingConfigArgs{
+			MinSize:     pulumi.Int(0),
+			DesiredSize: pulumi.Int(0),
+			MaxSize:     pulumi.Int(1),
+		},
+		InstanceTypes: pulumi.ToStringArray([]string{"t2.micro"}),
+		SubnetIds:     args.Subnets,
+	})
 
 	if err != nil {
 		return nil, err

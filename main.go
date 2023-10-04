@@ -158,6 +158,7 @@ func main() {
 			ClusterName:            principalCluster.Cluster.Name,
 			ClusterId:              principalCluster.Cluster.ID(),
 			IssuerUrlWithoutPrefix: principalCluster.IssuerUrlWithoutPrefix,
+			Subnets:                privateSubnets,
 		})
 
 		if err != nil {

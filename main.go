@@ -46,7 +46,7 @@ func main() {
 			return err
 		}
 
-		_, err = nodegroup.NewOpenNodeGroup(ctx, "t2-micro-amd64", &nodegroup.OpenNodeGroupArgs{
+		baseComputation, err := nodegroup.NewOpenNodeGroup(ctx, "t2-micro-amd64", &nodegroup.OpenNodeGroupArgs{
 			NodeGroupArgs: eks.NodeGroupArgs{
 				// AmiType:      pulumi.StringPtr("AL2_ARM_64"),
 				ClusterName:  principalCluster.Cluster.Name,
@@ -70,6 +70,8 @@ func main() {
 		if err != nil {
 			return err
 		}
+
+		baseComputation.ong
 
 		// _, err = nodegroup.NewOpenNodeGroup(ctx, "t4g-small-arm64", &nodegroup.OpenNodeGroupArgs{
 		// 	NodeGroupArgs: eks.NodeGroupArgs{
@@ -164,6 +166,10 @@ func main() {
 		if err != nil {
 			return err
 		}
+
+		_, err = addon.NewClusterAutoscaling(ctx, "cluster-autoscaling", &addon.ClusterAutoscalingArgs{
+			IssuerUrlWithoutPrefix: principalCluster.IssuerUrlWithoutPrefix,
+		})
 
 		// var InterfaceEndpointServices []string = []string{"ecr.api", "ecr.dkr", "sts", "ssm", "ec2messages", "ssmmessages", "ec2"}
 		// var GatewayEndpointServices []string = []string{"s3"}

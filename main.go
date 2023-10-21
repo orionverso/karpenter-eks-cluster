@@ -46,7 +46,7 @@ func main() {
 			return err
 		}
 
-		baseComputation, err := nodegroup.NewOpenNodeGroup(ctx, "t2-micro-amd64", &nodegroup.OpenNodeGroupArgs{
+		_, err = nodegroup.NewOpenNodeGroup(ctx, "t2-micro-amd64", &nodegroup.OpenNodeGroupArgs{
 			NodeGroupArgs: eks.NodeGroupArgs{
 				// AmiType:      pulumi.StringPtr("AL2_ARM_64"),
 				ClusterName:  principalCluster.Cluster.Name,
@@ -70,8 +70,6 @@ func main() {
 		if err != nil {
 			return err
 		}
-
-		baseComputation.ong
 
 		// _, err = nodegroup.NewOpenNodeGroup(ctx, "t4g-small-arm64", &nodegroup.OpenNodeGroupArgs{
 		// 	NodeGroupArgs: eks.NodeGroupArgs{
@@ -116,15 +114,6 @@ func main() {
 				}),
 			},
 		})
-		if err != nil {
-			return err
-		}
-
-		_, err = addon.NewVpcCni(ctx, "vpc-cni", &addon.VpcCniArgs{
-			ClusterName:            principalCluster.Cluster.Name,
-			IssuerUrlWithoutPrefix: principalCluster.IssuerUrlWithoutPrefix,
-		}, pulumi.DependsOn([]pulumi.Resource{amdGroup}))
-
 		if err != nil {
 			return err
 		}

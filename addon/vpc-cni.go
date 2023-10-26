@@ -1,3 +1,5 @@
+// An add-on is software that provides supporting operational capabilities to Kubernetes applications
+// And is "COMPLETELY INSTALED BY AWS"
 package addon
 
 import (

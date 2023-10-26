@@ -4,6 +4,7 @@ import (
 
 	// "k8s-cluster/role"
 	"k8s-cluster-own/cluster"
+	"k8s-cluster-own/complement"
 	"k8s-cluster-own/nodegroup"
 
 	// endpoints "k8s-cluster-own/service-endpoints"
@@ -127,7 +128,7 @@ func main() {
 			return err
 		}
 
-		_, err = addon.NewElbController(ctx, "elb-controller", &addon.ElbControllerArgs{
+		_, err = complement.NewElbController(ctx, "elb-controller", &complement.ElbControllerArgs{
 			IssuerUrlWithoutPrefix: principalCluster.IssuerUrlWithoutPrefix,
 			ClusterName:            principalCluster.Cluster.Name,
 		}, pulumi.DependsOn([]pulumi.Resource{amdGroup}))
@@ -145,7 +146,7 @@ func main() {
 		// 	return err
 		// }
 
-		_, err = addon.NewKarpenterAutoScaling(ctx, "kapenter-autoscaling", &addon.KarpenterAutoScalingArgs{
+		_, err = complement.NewKarpenterAutoScaling(ctx, "kapenter-autoscaling", &complement.KarpenterAutoScalingArgs{
 			ClusterName:            principalCluster.Cluster.Name,
 			ClusterId:              principalCluster.Cluster.ID(),
 			IssuerUrlWithoutPrefix: principalCluster.IssuerUrlWithoutPrefix,
@@ -156,7 +157,7 @@ func main() {
 			return err
 		}
 
-		_, err = addon.NewClusterAutoscaling(ctx, "cluster-autoscaling", &addon.ClusterAutoscalingArgs{
+		_, err = complement.NewClusterAutoscaling(ctx, "cluster-autoscaling", &complement.ClusterAutoscalingArgs{
 			IssuerUrlWithoutPrefix: principalCluster.IssuerUrlWithoutPrefix,
 		})
 

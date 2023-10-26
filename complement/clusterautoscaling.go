@@ -1,4 +1,7 @@
-package addon
+// An "Complement" is like Addon but...
+// YOU NEED INSTALL IN THE KUBERNETES SIDE TOO, TIPICALLY BY HELM
+// THIS CODE ONLY INSTALL REQUIREMENTS IN THE AWS SIDE
+package complement
 
 import (
 	"fmt"

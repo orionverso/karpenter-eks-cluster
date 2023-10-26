@@ -38,7 +38,7 @@ func NewElbController(ctx *pulumi.Context, name string, args *ElbControllerArgs,
 	account := cfg.GetSecret("account")
 
 	// https://docs.aws.amazon.com/es_es/eks/latest/userguide/aws-load-balancer-controller.html
-	elbControllerRole, err := iam.NewRole(ctx, "controllerRole", &iam.RoleArgs{
+	elbControllerRole, err := iam.NewRole(ctx, fmt.Sprintf("%s-controllerRole", name), &iam.RoleArgs{
 		InlinePolicies: iam.RoleInlinePolicyArray{
 			iam.RoleInlinePolicyArgs{
 				Name: pulumi.StringPtr("load-balancer-controller-policy-additional"),
@@ -348,7 +348,7 @@ func NewElbController(ctx *pulumi.Context, name string, args *ElbControllerArgs,
 		return nil, err
 	}
 
-	_, err = corev1.NewServiceAccount(ctx, "Elb-Controller-Addon-ServiceAccount", &corev1.ServiceAccountArgs{
+	_, err = corev1.NewServiceAccount(ctx, fmt.Sprintf("%s-Elb-Controller-Addon-ServiceAccount", name), &corev1.ServiceAccountArgs{
 		Metadata: metav1.ObjectMetaArgs{
 			Labels: pulumi.StringMap{
 				"app.kubernetes.io/component": pulumi.String("controller"),

@@ -90,7 +90,7 @@ func NewClusterAutoscaling(ctx *pulumi.Context, name string, args *ClusterAutosc
 }`, account, issuerurlwithoutprefix, issuerurlwithoutprefix, issuerurlwithoutprefix, namespace, serviceAccountName)
 
 	//Resources Example
-	role, err := iam.NewRole(ctx, fmt.Sprintf("cluster-autoscaling-%s", name), &iam.RoleArgs{
+	role, err := iam.NewRole(ctx, fmt.Sprintf("%s-cluster-autoscaler-ASG", name), &iam.RoleArgs{
 		AssumeRolePolicy: trustedPolicy,
 		InlinePolicies: iam.RoleInlinePolicyArray{
 			iam.RoleInlinePolicyArgs{
@@ -117,15 +117,9 @@ func NewClusterAutoscaling(ctx *pulumi.Context, name string, args *ClusterAutosc
 		}),
 	}
 
-	_, err = corev1.NewServiceAccount(ctx, "cluster-autoscaler", &corev1.ServiceAccountArgs{
+	_, err = corev1.NewServiceAccount(ctx, fmt.Sprintf("%s-cluster-autoscaler", name), &corev1.ServiceAccountArgs{
 		Metadata: metaArgs,
 	}, pulumi.DependsOn([]pulumi.Resource{role}), pulumi.Parent(componentResource))
-
-	if err != nil {
-		return nil, err
-	}
-
-	// bk, err := s3.NewClusterAutoscaling(ctx, fmt.Sprintf("%s-bucket", name), &args.ClusterAutoscalingArgs, pulumi.Parent(componentResource))
 
 	if err != nil {
 		return nil, err

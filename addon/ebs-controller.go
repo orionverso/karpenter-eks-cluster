@@ -1,6 +1,8 @@
 package addon
 
 import (
+	"fmt"
+
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/eks"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/iam"
 	"github.com/pulumi/pulumi/sdk/v3/go/pulumi"
@@ -51,7 +53,7 @@ func NewEbsController(ctx *pulumi.Context, name string, args *EbsControllerArgs,
   ]
 }`, account, args.IssuerUrlWithoutPrefix, args.IssuerUrlWithoutPrefix, args.IssuerUrlWithoutPrefix)
 
-	ebsControllerRole, err := iam.NewRole(ctx, "ebs-controller-role", &iam.RoleArgs{
+	ebsControllerRole, err := iam.NewRole(ctx, fmt.Sprintf("%s-ebs-controller-role", name), &iam.RoleArgs{
 		AssumeRolePolicy:  trustedPolicy,
 		ManagedPolicyArns: pulumi.ToStringArray([]string{"arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"}),
 	}, pulumi.Parent(componentResource))
@@ -60,7 +62,7 @@ func NewEbsController(ctx *pulumi.Context, name string, args *EbsControllerArgs,
 		return nil, err
 	}
 
-	_, err = eks.NewAddon(ctx, "ebs-controller-addon", &eks.AddonArgs{
+	_, err = eks.NewAddon(ctx, fmt.Sprintf("%s-controller-addon", name), &eks.AddonArgs{
 		ClusterName:           args.ClusterName,
 		AddonName:             pulumi.String("aws-ebs-csi-driver"),
 		ServiceAccountRoleArn: ebsControllerRole.Arn,

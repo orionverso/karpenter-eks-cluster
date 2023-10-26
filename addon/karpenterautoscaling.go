@@ -44,7 +44,7 @@ func NewKarpenterAutoScaling(ctx *pulumi.Context, name string, args *KarpenterAu
 	//curl -fsSL https://raw.githubusercontent.com/aws/karpenter/v0.30.0/website/content/en/preview/getting-started/getting-started-with-karpenter/cloudformation.yaml
 	queuename := pulumi.Sprintf("%s", cluster).ToStringPtrOutput()
 
-	InterruptionQueue, err := sqs.NewQueue(ctx, "KarpenterInterruptionQueue", &sqs.QueueArgs{
+	InterruptionQueue, err := sqs.NewQueue(ctx, fmt.Sprintf("%s-KarpenterInterruptionQueue", name), &sqs.QueueArgs{
 		Name:                    queuename,
 		MessageRetentionSeconds: pulumi.IntPtr(300),
 		SqsManagedSseEnabled:    pulumi.BoolPtr(true),
@@ -54,7 +54,7 @@ func NewKarpenterAutoScaling(ctx *pulumi.Context, name string, args *KarpenterAu
 		return nil, err
 	}
 
-	_, err = sqs.NewQueuePolicy(ctx, "KarpenterInterruptionQueuePolicy", &sqs.QueuePolicyArgs{
+	_, err = sqs.NewQueuePolicy(ctx, fmt.Sprintf("%s-KarpenterInterruptionQueuePolicy", name), &sqs.QueuePolicyArgs{
 		QueueUrl: InterruptionQueue.Url,
 		Policy: pulumi.Sprintf(`{
   "Id": "EC2InterruptionPolicy",
@@ -84,7 +84,7 @@ func NewKarpenterAutoScaling(ctx *pulumi.Context, name string, args *KarpenterAu
 
 	///eventbridge
 
-	SheduleChangeRule, err := cloudwatch.NewEventRule(ctx, "SheduleChangeRule", &cloudwatch.EventRuleArgs{
+	SheduleChangeRule, err := cloudwatch.NewEventRule(ctx, fmt.Sprintf("%s-SheduleChangeRule", name), &cloudwatch.EventRuleArgs{
 		EventPattern: pulumi.StringPtr(`{
   "source": ["aws.health"],
   "detail-type": ["AWS Health Event"]
@@ -95,7 +95,7 @@ func NewKarpenterAutoScaling(ctx *pulumi.Context, name string, args *KarpenterAu
 		return nil, err
 	}
 
-	_, err = cloudwatch.NewEventTarget(ctx, "SheduleChangeRuleTarget", &cloudwatch.EventTargetArgs{
+	_, err = cloudwatch.NewEventTarget(ctx, fmt.Sprintf("%s-SheduleChangeRuleTarget", name), &cloudwatch.EventTargetArgs{
 		Arn:  InterruptionQueue.Arn,
 		Rule: SheduleChangeRule.Name,
 	}, pulumi.Parent(SheduleChangeRule))
@@ -104,7 +104,7 @@ func NewKarpenterAutoScaling(ctx *pulumi.Context, name string, args *KarpenterAu
 		return nil, err
 	}
 
-	SpotInterruptionRule, err := cloudwatch.NewEventRule(ctx, "SpotInterruptionRule", &cloudwatch.EventRuleArgs{
+	SpotInterruptionRule, err := cloudwatch.NewEventRule(ctx, fmt.Sprintf("%s-SpotInterruptionRule", name), &cloudwatch.EventRuleArgs{
 		EventPattern: pulumi.StringPtr(`{
   "source": ["aws.ec2"],
   "detail-type": ["EC2 Spot Instance Interruption Warning"]
@@ -115,7 +115,7 @@ func NewKarpenterAutoScaling(ctx *pulumi.Context, name string, args *KarpenterAu
 		return nil, err
 	}
 
-	_, err = cloudwatch.NewEventTarget(ctx, "SpotInterruptionRuleTarget", &cloudwatch.EventTargetArgs{
+	_, err = cloudwatch.NewEventTarget(ctx, fmt.Sprintf("%s-SpotInterruptionRuleTarget", name), &cloudwatch.EventTargetArgs{
 		Arn:  InterruptionQueue.Arn,
 		Rule: SpotInterruptionRule.Name,
 	}, pulumi.Parent(SpotInterruptionRule))
@@ -124,7 +124,7 @@ func NewKarpenterAutoScaling(ctx *pulumi.Context, name string, args *KarpenterAu
 		return nil, err
 	}
 
-	RebalanceRule, err := cloudwatch.NewEventRule(ctx, "RebalanceRule", &cloudwatch.EventRuleArgs{
+	RebalanceRule, err := cloudwatch.NewEventRule(ctx, fmt.Sprintf("%s-RebalanceRule", name), &cloudwatch.EventRuleArgs{
 		EventPattern: pulumi.StringPtr(`{
   "source": ["aws.ec2"],
   "detail-type": ["EC2 Instance Rebalance Recommendation"]
@@ -135,7 +135,7 @@ func NewKarpenterAutoScaling(ctx *pulumi.Context, name string, args *KarpenterAu
 		return nil, err
 	}
 
-	_, err = cloudwatch.NewEventTarget(ctx, "RebalanceRuleTarget", &cloudwatch.EventTargetArgs{
+	_, err = cloudwatch.NewEventTarget(ctx, fmt.Sprintf("%s-RebalanceRuleTarget", name), &cloudwatch.EventTargetArgs{
 		Arn:  InterruptionQueue.Arn,
 		Rule: RebalanceRule.Name,
 	}, pulumi.Parent(RebalanceRule))
@@ -144,7 +144,7 @@ func NewKarpenterAutoScaling(ctx *pulumi.Context, name string, args *KarpenterAu
 		return nil, err
 	}
 
-	InstanceStateChangeRule, err := cloudwatch.NewEventRule(ctx, "InstanceStateChangeRule", &cloudwatch.EventRuleArgs{
+	InstanceStateChangeRule, err := cloudwatch.NewEventRule(ctx, fmt.Sprintf("%s-InstanceStateChangeRule", name), &cloudwatch.EventRuleArgs{
 		EventPattern: pulumi.StringPtr(`{
   "source": ["aws.ec2"],
   "detail-type": ["EC2 Instance State-change Notification"]
@@ -155,7 +155,7 @@ func NewKarpenterAutoScaling(ctx *pulumi.Context, name string, args *KarpenterAu
 		return nil, err
 	}
 
-	_, err = cloudwatch.NewEventTarget(ctx, "InstanceStateChangeRuleTarget", &cloudwatch.EventTargetArgs{
+	_, err = cloudwatch.NewEventTarget(ctx, fmt.Sprintf("%s-InstanceStateChangeRuleTarget", name), &cloudwatch.EventTargetArgs{
 		Arn:  InterruptionQueue.Arn,
 		Rule: InstanceStateChangeRule.Name,
 	}, pulumi.Parent(InstanceStateChangeRule))
@@ -191,7 +191,7 @@ func NewKarpenterAutoScaling(ctx *pulumi.Context, name string, args *KarpenterAu
 		return nil, err
 	}
 
-	karpenterNodeInstanceProfile, err := iam.NewInstanceProfile(ctx, "KarpenterNodeInstanceProfile", &iam.InstanceProfileArgs{
+	karpenterNodeInstanceProfile, err := iam.NewInstanceProfile(ctx, fmt.Sprintf("%s-KarpenterNodeInstanceProfile", name), &iam.InstanceProfileArgs{
 		Name: pulumi.Sprintf("KarpenterNodeInstanceProfile-%s", cluster).ToStringPtrOutput(),
 		Role: karpenterNodeRole.Name,
 		Path: pulumi.StringPtr("/"),
@@ -202,7 +202,7 @@ func NewKarpenterAutoScaling(ctx *pulumi.Context, name string, args *KarpenterAu
 	}
 
 	// The purpose of this group of nodes is not to launch machines, it is to update aws_auth configMap (iamIdentityMappings for eksctl) with the karpenter node role automatically without intricate scripts. So, after that managed karpenter machines can join to the cluster.
-	_, err = eks.NewNodeGroup(ctx, "FalseNodeGroup", &eks.NodeGroupArgs{
+	_, err = eks.NewNodeGroup(ctx, fmt.Sprintf("%s-FalseNodeGroup", name), &eks.NodeGroupArgs{
 		NodeRoleArn:  karpenterNodeRole.Arn,
 		ClusterName:  args.ClusterName,
 		CapacityType: pulumi.StringPtr("ON_DEMAND"),
@@ -402,7 +402,7 @@ func NewKarpenterAutoScaling(ctx *pulumi.Context, name string, args *KarpenterAu
           ]
   }`, region, region, region, region, region, region, region, cluster, region, region, region, region, cluster, region, region, region, region, region, cluster, region, cluster, cluster, region, region, cluster, region, InterruptionQueue.Arn, account, cluster, region, account, cluster)
 
-	KarpenterControllerPolicy, err := iam.NewPolicy(ctx, "KarpenterConrtrollerPolicy", &iam.PolicyArgs{
+	KarpenterControllerPolicy, err := iam.NewPolicy(ctx, fmt.Sprintf("%s-KarpenterConrtrollerPolicy", name), &iam.PolicyArgs{
 		Name:   pulumi.Sprintf("KarpenterControllerPolicy-%s", cluster),
 		Policy: KarpenterControllerPolicyJSON,
 	}, pulumi.Parent(componentResource))
@@ -430,7 +430,7 @@ func NewKarpenterAutoScaling(ctx *pulumi.Context, name string, args *KarpenterAu
 				    ]
 				}`, account, args.IssuerUrlWithoutPrefix, args.IssuerUrlWithoutPrefix, args.IssuerUrlWithoutPrefix)
 	//
-	KarpenterControllerRole, err := iam.NewRole(ctx, "KarpenterControllerRole", &iam.RoleArgs{
+	KarpenterControllerRole, err := iam.NewRole(ctx, fmt.Sprintf("%s-KarpenterControllerRole", name), &iam.RoleArgs{
 		AssumeRolePolicy:  trustedpolicy,
 		ManagedPolicyArns: pulumi.StringArray{KarpenterControllerPolicy.Arn},
 	}, pulumi.Parent(componentResource))

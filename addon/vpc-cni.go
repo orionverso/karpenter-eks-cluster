@@ -1,6 +1,8 @@
 package addon
 
 import (
+	"fmt"
+
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/eks"
 	"github.com/pulumi/pulumi-aws/sdk/v6/go/aws/iam"
 	corev1 "github.com/pulumi/pulumi-kubernetes/sdk/v4/go/kubernetes/core/v1"
@@ -53,7 +55,7 @@ func NewVpcCni(ctx *pulumi.Context, name string, args *VpcCniArgs, opts ...pulum
 				    ]
 				}`, account, args.IssuerUrlWithoutPrefix, args.IssuerUrlWithoutPrefix, args.IssuerUrlWithoutPrefix)
 	//
-	vpcCniRole, err := iam.NewRole(ctx, "Vpc-cni-role", &iam.RoleArgs{
+	vpcCniRole, err := iam.NewRole(ctx, fmt.Sprintf("%s-Vpc-cni-role", name), &iam.RoleArgs{
 		AssumeRolePolicy:  trustedpolicy,
 		ManagedPolicyArns: pulumi.ToStringArray([]string{"arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"}),
 	}, pulumi.Parent(componentResource))
@@ -62,7 +64,7 @@ func NewVpcCni(ctx *pulumi.Context, name string, args *VpcCniArgs, opts ...pulum
 		return nil, err
 	}
 
-	_, err = corev1.NewServiceAccount(ctx, "VpcCNI-addon-ServiceAccount", &corev1.ServiceAccountArgs{
+	_, err = corev1.NewServiceAccount(ctx, fmt.Sprintf("%s-VpcCNI-addon-ServiceAccount", name), &corev1.ServiceAccountArgs{
 		Metadata: metav1.ObjectMetaArgs{
 			Annotations: pulumi.StringMap{
 				"eks.amazonaws.com/role-arn":               pulumi.Sprintf("%s", vpcCniRole.Arn),
@@ -76,7 +78,7 @@ func NewVpcCni(ctx *pulumi.Context, name string, args *VpcCniArgs, opts ...pulum
 	if err != nil {
 		return nil, err
 	}
-	_, err = eks.NewAddon(ctx, "Vpc-cni-AddOn", &eks.AddonArgs{
+	_, err = eks.NewAddon(ctx, fmt.Sprintf("%s-Vpc-cni-AddOn", name), &eks.AddonArgs{
 		AddonName:                pulumi.String("vpc-cni"),
 		AddonVersion:             pulumi.StringPtr("v1.13.4-eksbuild.1"),
 		ClusterName:              args.ClusterName,

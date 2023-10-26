@@ -64,14 +64,6 @@ func NewOpenNodeGroup(ctx *pulumi.Context, name string, args *OpenNodeGroupArgs,
 		return nil, err
 	}
 
-	if err != nil {
-		return nil, err
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
 	ctx.RegisterResourceOutputs(componentResource, pulumi.Map{})
 
 	return componentResource, nil

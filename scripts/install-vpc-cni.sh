@@ -1,4 +1,5 @@
 #!/bin/bash
+#You want to update to helm aws-vpc-cni because the automanaged not implement network policy
 #delete automanaged  aws-vpc-cni
 kubectl delete serviceaccounts -n kube-system aws-node
 kubectl delete clusterroles.rbac.authorization.k8s.io aws-node

@@ -14,7 +14,7 @@ spec:
       values: ["spot"]
   limits:
     resources:
-      cpu: 1000
+      cpu: 10
   providerRef:
     name: default
   consolidation: 
